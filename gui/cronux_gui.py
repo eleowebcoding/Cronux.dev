@@ -72,15 +72,13 @@ class InstallWorker(QThread):
     def install_windows(self):
         """Instalación en Windows"""
         try:
-            # Copiar a System32 o crear en PATH
+            # Copiar a System32
             system32_path = Path("C:/Windows/System32/crx.exe")
             
-            # Intentar copiar a System32
             try:
                 shutil.copy2(self.cli_path, system32_path)
                 self.finished.emit(True, "¡Instalación completada exitosamente!")
             except PermissionError:
-                # Si no hay permisos, sugerir instalación manual
                 self.finished.emit(False, 
                     f"Necesitas permisos de administrador.\n"
                     f"Copia manualmente {self.cli_path} a C:\\Windows\\System32\\")
@@ -184,18 +182,18 @@ class CronuxGUI(QMainWindow):
         """Inicializa la interfaz de usuario con diseño adaptativo"""
         self.setWindowTitle("Cronux-CRX Installer")
         
-        # Tamaño optimizado para todos los sistemas
+        # Tamaño optimizado para cada sistema
         if platform.system() == "Darwin":  # macOS
-            self.setFixedSize(650, 600)
+            self.setFixedSize(650, 620)
         elif platform.system() == "Windows":
-            self.setFixedSize(650, 600)
+            self.setFixedSize(650, 650)  # Más altura para Windows
         else:  # Linux
-            self.setFixedSize(650, 600)
+            self.setFixedSize(650, 630)
         
         # Estilo moderno y adaptativo
         self.setStyleSheet(self.get_adaptive_stylesheet())
         
-        # Configurar ventana sin bordes nativos para mejor control
+        # Configurar ventana
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint)
         
         # Agregar sombra a la ventana
@@ -205,15 +203,19 @@ class CronuxGUI(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        # Layout principal
+        # Layout principal con espaciado adaptativo
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(20)
-        main_layout.setContentsMargins(40, 40, 40, 40)
+        if platform.system() == "Windows":
+            main_layout.setSpacing(15)  # Menos espaciado en Windows
+            main_layout.setContentsMargins(35, 35, 35, 35)
+        else:
+            main_layout.setSpacing(20)
+            main_layout.setContentsMargins(40, 40, 40, 40)
         
         # Spacer superior
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
         
-        # Icono grande (cargar icono real)
+        # Icono grande
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignCenter)
         
@@ -270,9 +272,13 @@ class CronuxGUI(QMainWindow):
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_font = QFont()
-        desc_font.setPointSize(13)
+        # Tamaño de fuente adaptativo
+        if platform.system() == "Windows":
+            desc_font.setPointSize(12)  # Ligeramente más pequeño en Windows
+        else:
+            desc_font.setPointSize(13)
         desc_label.setFont(desc_font)
-        desc_label.setStyleSheet("color: #9ca3af; line-height: 1.4;")
+        desc_label.setStyleSheet("color: #9ca3af; line-height: 1.3; margin: 10px;")
         main_layout.addWidget(desc_label)
         
         # Spacer
@@ -507,47 +513,18 @@ class CronuxGUI(QMainWindow):
             base = Path(__file__).parent.parent
             return base / "assets" / "cronux_cli.png"
     
-    def get_utility_icon_path(self, icon_name):
-        """Obtiene la ruta de un icono de utilidades"""
-        if getattr(sys, 'frozen', False):
-            return Path(sys._MEIPASS) / "assets" / icon_name
-        else:
-            base = Path(__file__).parent.parent
-            return base / "assets" / icon_name
-    
     def update_ui_state(self):
         """Actualiza el estado mostrado"""
         if self.is_installed:
             self.status_label.setText("Cronux-CRX CLI está instalado")
             self.status_label.setStyleSheet("color: #10b981;")
-            self.set_button_with_icon(self.main_button, "Probar CLI", "terminal.png", 24)
+            self.main_button.setText("Probar CLI")
             self.uninstall_button.setVisible(True)
-            self.set_button_with_icon(self.uninstall_button, "Desinstalar CLI", "uninstall.png", 16)
         else:
             self.status_label.setText("Cronux-CRX CLI no está instalado")
             self.status_label.setStyleSheet("color: #ef4444;")
-            self.set_button_with_icon(self.main_button, "Instalar CLI", "install.png", 24)
+            self.main_button.setText("Instalar CLI")
             self.uninstall_button.setVisible(False)
-    
-    def set_button_with_icon(self, button, text, icon_name, icon_size=24):
-        """Configura un botón con icono y texto"""
-        try:
-            icon_path = self.get_utility_icon_path(icon_name)
-            if icon_path and icon_path.exists():
-                pixmap = QPixmap(str(icon_path))
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(icon_size * 2, icon_size * 2, 
-                                                Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    icon = QIcon(scaled_pixmap)
-                    button.setIcon(icon)
-                    button.setIconSize(QSize(icon_size, icon_size))
-                    button.setText(f"   {text}")
-                    return
-        except Exception as e:
-            print(f"Error cargando icono {icon_name}: {e}")
-        
-        # Fallback: solo texto
-        button.setText(text)
     
     def on_main_button_click(self):
         """Maneja el clic del botón principal"""
@@ -627,24 +604,7 @@ class CronuxGUI(QMainWindow):
         """Muestra mensaje de éxito personalizado"""
         msg = QMessageBox(self)
         msg.setWindowTitle("¡Éxito!")
-        
-        # Usar icono de éxito real
-        success_icon_set = False
-        try:
-            success_icon_path = self.get_utility_icon_path("succes.png")
-            if success_icon_path and success_icon_path.exists():
-                pixmap = QPixmap(str(success_icon_path))
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    msg.setWindowIcon(QIcon(scaled_pixmap))
-                    msg.setText(f"✓ {message}")
-                    success_icon_set = True
-        except Exception as e:
-            print(f"Error cargando icono de éxito: {e}")
-        
-        if not success_icon_set:
-            msg.setText("✓ " + message)
-        
+        msg.setText("✓ " + message)
         msg.setIcon(QMessageBox.Information)
         msg.setStandardButtons(QMessageBox.Ok)
         
@@ -679,24 +639,7 @@ class CronuxGUI(QMainWindow):
         """Muestra mensaje de error personalizado"""
         msg = QMessageBox(self)
         msg.setWindowTitle("Error")
-        
-        # Usar icono de error real
-        error_icon_set = False
-        try:
-            error_icon_path = self.get_utility_icon_path("error.png")
-            if error_icon_path and error_icon_path.exists():
-                pixmap = QPixmap(str(error_icon_path))
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    msg.setWindowIcon(QIcon(scaled_pixmap))
-                    msg.setText(f"✗ {message}")
-                    error_icon_set = True
-        except Exception as e:
-            print(f"Error cargando icono de error: {e}")
-        
-        if not error_icon_set:
-            msg.setText("✗ " + message)
-        
+        msg.setText("✗ " + message)
         msg.setIcon(QMessageBox.Critical)
         msg.setStandardButtons(QMessageBox.Ok)
         
@@ -789,44 +732,57 @@ def run_as_admin():
 
 def main():
     """Función principal"""
-    if not PYQT5_AVAILABLE:
-        print("❌ PyQt5 no está disponible")
-        print("💡 Instala con: pip install PyQt5")
+    try:
+        if not PYQT5_AVAILABLE:
+            print("❌ PyQt5 no está disponible")
+            print("💡 Instala con: pip install PyQt5")
+            return 1
+        
+        # Verificar si se necesitan permisos de administrador
+        if not is_admin() and "--no-admin" not in sys.argv:
+            print("🔐 Solicitando permisos de administrador...")
+            run_as_admin()
+            return 0
+        
+        app = QApplication(sys.argv)
+        app.setApplicationName("Cronux-CRX Installer")
+        app.setApplicationVersion("1.0.0")
+        app.setStyle('Fusion')
+        
+        # Configurar paleta oscura moderna
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(15, 23, 42))
+        palette.setColor(QPalette.WindowText, QColor(241, 245, 249))
+        palette.setColor(QPalette.Base, QColor(30, 41, 59))
+        palette.setColor(QPalette.AlternateBase, QColor(51, 65, 85))
+        palette.setColor(QPalette.ToolTipBase, QColor(0, 0, 0))
+        palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Text, QColor(241, 245, 249))
+        palette.setColor(QPalette.Button, QColor(51, 65, 85))
+        palette.setColor(QPalette.ButtonText, QColor(241, 245, 249))
+        palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+        palette.setColor(QPalette.Link, QColor(59, 130, 246))
+        palette.setColor(QPalette.Highlight, QColor(59, 130, 246))
+        palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        app.setPalette(palette)
+        
+        installer = CronuxGUI()
+        installer.show()
+        
+        return app.exec_()
+        
+    except Exception as e:
+        print(f"Error en main(): {e}")
         return 1
-    
-    # Verificar si se necesitan permisos de administrador
-    if not is_admin() and "--no-admin" not in sys.argv:
-        print("🔐 Solicitando permisos de administrador...")
-        run_as_admin()
-        return 0
-    
-    app = QApplication(sys.argv)
-    app.setApplicationName("Cronux-CRX Installer")
-    app.setApplicationVersion("1.0.0")
-    app.setStyle('Fusion')
-    
-    # Configurar paleta oscura moderna
-    palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(15, 23, 42))
-    palette.setColor(QPalette.WindowText, QColor(241, 245, 249))
-    palette.setColor(QPalette.Base, QColor(30, 41, 59))
-    palette.setColor(QPalette.AlternateBase, QColor(51, 65, 85))
-    palette.setColor(QPalette.ToolTipBase, QColor(0, 0, 0))
-    palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Text, QColor(241, 245, 249))
-    palette.setColor(QPalette.Button, QColor(51, 65, 85))
-    palette.setColor(QPalette.ButtonText, QColor(241, 245, 249))
-    palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
-    palette.setColor(QPalette.Link, QColor(59, 130, 246))
-    palette.setColor(QPalette.Highlight, QColor(59, 130, 246))
-    palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
-    app.setPalette(palette)
-    
-    installer = CronuxGUI()
-    installer.show()
-    
-    return app.exec_()
 
+def run_installer():
+    """Función de entrada robusta para el instalador"""
+    try:
+        return main()
+    except Exception as e:
+        print(f"Error ejecutando instalador: {e}")
+        return 1
 
+# Punto de entrada principal
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run_installer())
