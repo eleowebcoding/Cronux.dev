@@ -33,10 +33,16 @@ def limpiar_archivos():
     
     # Limpiar archivos .pyc y .spec
     for pyc_file in Path(".").rglob("*.pyc"):
-        pyc_file.unlink()
+        try:
+            pyc_file.unlink()
+        except:
+            pass
     
     for spec_file in Path(".").glob("*.spec"):
-        spec_file.unlink()
+        try:
+            spec_file.unlink()
+        except:
+            pass
 
 def compilar_cli_temporal():
     """Compila el CLI temporalmente para embeber"""
@@ -330,10 +336,16 @@ def limpiar_archivos_temporales():
     
     for path in ["temp_cli", "temp_gui", "build", "__pycache__"]:
         if Path(path).exists():
-            shutil.rmtree(path)
+            try:
+                shutil.rmtree(path)
+            except:
+                pass
     
     for spec_file in Path(".").glob("*.spec"):
-        spec_file.unlink()
+        try:
+            spec_file.unlink()
+        except:
+            pass
 
 def mostrar_instrucciones_optimizadas(installer_path, deb_path=None):
     """Muestra instrucciones de uso del instalador optimizado"""
@@ -364,7 +376,7 @@ def mostrar_instrucciones_optimizadas(installer_path, deb_path=None):
    • CLI embebido (no necesita archivos externos)
    • Ejecución automática como administrador
    • Instalación en System32 para acceso global
-   • Interfaz moderna adaptativa (650x600)
+   • Interfaz moderna adaptativa (650x650)
 
 🎯 Uso después de instalar:
    crx new mi-proyecto
@@ -385,7 +397,7 @@ def mostrar_instrucciones_optimizadas(installer_path, deb_path=None):
    • CLI embebido (no necesita archivos externos)
    • Solicitud automática de permisos de administrador
    • Instalación en /usr/local/bin para acceso global
-   • Interfaz nativa de macOS (650x600)
+   • Interfaz nativa de macOS (650x620)
 
 🎯 Uso después de instalar:
    crx new mi-proyecto
@@ -409,7 +421,7 @@ def mostrar_instrucciones_optimizadas(installer_path, deb_path=None):
    • Paquete .deb para fácil instalación/desinstalación
    • Solicitud automática de permisos de administrador
    • Instalación en /usr/local/bin para acceso global
-   • Interfaz adaptativa para Linux (650x600)
+   • Interfaz adaptativa para Linux (650x630)
 
 🎯 Uso después de instalar:
    crx new mi-proyecto
