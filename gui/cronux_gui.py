@@ -184,13 +184,13 @@ class CronuxGUI(QMainWindow):
         """Inicializa la interfaz de usuario con diseño adaptativo"""
         self.setWindowTitle("Cronux-CRX Installer")
         
-        # Tamaño adaptativo según el sistema (optimizado para mostrar todo el contenido)
+        # Tamaño optimizado para todos los sistemas
         if platform.system() == "Darwin":  # macOS
-            self.setFixedSize(600, 700)
+            self.setFixedSize(650, 600)
         elif platform.system() == "Windows":
-            self.setFixedSize(600, 700)
+            self.setFixedSize(650, 600)
         else:  # Linux
-            self.setFixedSize(620, 720)
+            self.setFixedSize(650, 600)
         
         # Estilo moderno y adaptativo
         self.setStyleSheet(self.get_adaptive_stylesheet())
